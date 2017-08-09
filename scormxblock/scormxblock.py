@@ -387,7 +387,7 @@ class ScormXBlock(XBlock):
         """
         # TODO: handle errors
         # TODO: this is specific to SSLA player at this point.  evaluate for broader use case
-        return Response(self.raw_scorm_status, content_type='application/json')
+        return Response(self.raw_scorm_status, content_type='application/json', charset='UTF-8')
 
     @XBlock.handler
     def set_raw_scorm_status(self, request, suffix=''):
@@ -415,7 +415,7 @@ class ScormXBlock(XBlock):
         self.save()
 
         # TODO: handle errors
-        return Response(json.dumps(self.raw_scorm_status), content_type='application/json')
+        return Response(json.dumps(self.raw_scorm_status), content_type='application/json', charset='UTF-8')
 
     def _get_value_from_sco(self, sco, key, default):
         """
