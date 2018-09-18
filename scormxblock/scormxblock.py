@@ -56,6 +56,7 @@ else:
 AVAIL_ENCODINGS = encodings.aliases.aliases
 DEFAULT_SITE_DOMAIN = "example.com"
 
+
 class ScormXBlock(XBlock):
 
     has_score = True
@@ -178,7 +179,7 @@ class ScormXBlock(XBlock):
         if hasattr(key, 'to_deprecated_string'):
             return key.to_deprecated_string()
         else:
-            return unicode(key)        
+            return unicode(key)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -197,7 +198,7 @@ class ScormXBlock(XBlock):
             # guard against unset/default Site domain           
             lms_base = site.domain if str(site.domain) != DEFAULT_SITE_DOMAIN else settings.ENV_TOKENS.get("LMS_BASE")
         except AttributeError:
-            lms_base = settings.ENV_TOKENS("LMS_BASE")    
+            lms_base = settings.ENV_TOKENS("LMS_BASE")
 
         scorm_player_url = ""
 
@@ -207,12 +208,12 @@ class ScormXBlock(XBlock):
         elif self.scorm_player:
             # SSLA: launch.htm?courseId=1&studentName=Caudill,Brian&studentId=1&courseDirectory=courses/SSLA_tryout
             player_config = DEFINED_PLAYERS[self.scorm_player]
-            player  = player_config['location']
+            player = player_config['location']
             if '://' in player:
                 scorm_player_url = player
-            else:    
+            else:
                 scorm_player_url = '{}://{}{}'.format(scheme, lms_base, player)
-                    
+
         html = self.resource_string("static/html/scormxblock.html")
 
         # don't call handlers if student_view is not called from within LMS
@@ -247,7 +248,6 @@ class ScormXBlock(XBlock):
         js = self.resource_string("static/js/src/scormxblock.js")
         jsfrag = MakoTemplate(js).render_unicode(**context)
         frag.add_javascript(jsfrag)
-
 
         # TODO: this will only work to display staff debug info if 'scormxblock' is one of the
         # categories of blocks that are specified in lms/templates/staff_problem_info.html so this will
@@ -309,7 +309,7 @@ class ScormXBlock(XBlock):
             file = request.params['file'].file
             zip_file = zipfile.ZipFile(file, 'r')
             storage = scorm_storage_instance
-            
+
             path_to_file = os.path.join(SCORM_STORAGE_DIR, self.location.block_id)
 
             if storage.exists(os.path.join(path_to_file, 'imsmanifest.xml')):
@@ -400,7 +400,7 @@ class ScormXBlock(XBlock):
         initialize all SCOs with proper credit and status values in case 
         content package does not do this correctly
         """
-        
+
         # set all scos lesson status to 'not attempted'
         # set credit/no-credit on all scos
         credit = self.weight > 0 and 'credit' or 'no-credit'
@@ -432,7 +432,7 @@ class ScormXBlock(XBlock):
             self._init_scos()
 
         self.raw_scorm_status = data
-                
+
         self.lesson_status = new_status
 
         score = scorm_data.get('score')
@@ -473,16 +473,15 @@ class ScormXBlock(XBlock):
         self.lesson_score = score_rollup
         return score_rollup
 
-
     def _publish_grade(self, status, score):
         """
         publish the grade in the LMS.
         """
-        
+
         # We must do this regardless of the lesson
         # status to avoid race condition issues where a grade of None might overwrite a 
         # grade value for incomplete lesson statuses.
-        
+
         # translate the internal score as a percentage of block's weight
         # we are assuming here the best practice for SCORM 1.2 of a max score of 100
         # if we weren't dealing with KESDEE publisher's incorrect usage of cmi.core.score.max
