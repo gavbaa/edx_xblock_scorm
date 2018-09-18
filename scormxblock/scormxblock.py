@@ -490,7 +490,7 @@ class ScormXBlock(XBlock):
         # in practice, SCOs will almost certainly have a max of 100
         # http://www.ostyn.com/blog/2006/09/scoring-in-scorm.html
         # TODO: handle variable max scores when we support SCORM2004+ or a better KESDEE workaround
-        if score != '':
+        if score is not None and score != '':
             self.runtime.publish(
                 self,
                 'grade',
