@@ -85,6 +85,10 @@ function ScormXBlock_${block_id}(runtime, element) {
     host_frame_${block_id} = $('#scormxblock-${block_id}');
     host_frame_${block_id}.data('csrftoken', $.cookie('csrftoken'));
     launch_btn_${block_id}.on('click', function() {
+      document.location.href = host_frame_${block_id}.data('player_url') + "?cfg=" + host_frame_${block_id}.data('config_url');
+      return false;
+
+
       playerWin = null;
       if (host_frame_${block_id}.data('display_type') == 'iframe') {
         host_frame_${block_id}.css('height', host_frame_${block_id}.data('display_height') + 'px');

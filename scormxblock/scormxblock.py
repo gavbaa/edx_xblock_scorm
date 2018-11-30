@@ -37,6 +37,7 @@ scorm_settings = settings.ENV_TOKENS['XBLOCK_SETTINGS']['ScormXBlock']
 DEFINED_PLAYERS = scorm_settings.get("SCORM_PLAYER_BACKENDS", {})
 SCORM_FILE_STORAGE_TYPE = scorm_settings.get("SCORM_FILE_STORAGE_TYPE", "django.core.files.storage.default_storage")
 SCORM_STORAGE_DIR = scorm_settings.get("SCORM_PKG_STORAGE_DIR", "scorms")
+SCORM_STORAGE_BASE_URL = scorm_settings.get("SCORM_PKG_STORAGE_BASE_URL", "")
 SCORM_DISPLAY_STAFF_DEBUG_INFO = scorm_settings.get("SCORM_DISPLAY_STAFF_DEBUG_INFO", False)
 SCORM_REVERSE_STUDENT_NAMES = scorm_settings.get("SCORM_REVERSE_STUDENT_NAMES", True)
 SCORM_PKG_INTERNAL = {"value": "SCORM_PKG_INTERNAL", "display_name": "Internal Player: index.html in SCORM package"}
@@ -225,6 +226,7 @@ class ScormXBlock(XBlock):
         else:
             # we don't want to get/set SCORM status from preview
             get_url = set_url = '#'
+        config_url = self.runtime.handler_url(self, "ssla_config")
 
         # if display type is popup, don't use the full window width for the host iframe
         iframe_width = self.display_type=='popup' and DEFAULT_IFRAME_WIDTH or self.display_width;
@@ -237,9 +239,9 @@ class ScormXBlock(XBlock):
 
         frag = Fragment()
         frag.add_content(MakoTemplate(text=html.format(self=self, scorm_player_url=scorm_player_url,
-                                                       get_url=get_url, set_url=set_url, 
+                                                       get_url=get_url, set_url=set_url, config_url=config_url,
                                                        iframe_width=iframe_width, iframe_height=iframe_height,
-                                                       player_config=player_config, 
+                                                       player_config=player_config,
                                                        scorm_file=self.scorm_file)
                                      ).render_unicode())
 
@@ -417,6 +419,38 @@ class ScormXBlock(XBlock):
         # TODO: this is specific to SSLA player at this point.  evaluate for broader use case
         return Response(self.raw_scorm_status, content_type='application/json', charset='UTF-8')
 
+    @XBlock.handler
+    def ssla_config(self, request, suffix=''):
+        html = self.resource_string("static/js/src/config_template.js")
+        course_dir = self.scorm_file
+        if SCORM_STORAGE_BASE_URL:
+            course_dir = SCORM_STORAGE_BASE_URL + course_dir
+        context = {
+            'student_id': json.dumps(self.student_id),
+            'student_name': json.dumps(self.student_name),
+            'open_content_in': json.dumps(self.display_type),
+            'course_id': json.dumps(self.course_id),
+            'course_directory': json.dumps(course_dir),
+        }
+        # TODO Pass flag to indicate whether in student or authoring view
+        # if not authoring:
+        if True:
+            context['get_url'] = json.dumps(self.runtime.handler_url(self, "get_raw_scorm_status"))
+            context['set_url'] = json.dumps(self.runtime.handler_url(self, "set_raw_scorm_status"))
+        else:
+            context['get_url'] = '#'
+            context['set_url'] = '#'
+
+        try:
+            player_config = json.loads(self.player_configuration)
+        except ValueError:
+            player_config = {}
+        for ck, cv in player_config.items():
+            context[ck] = json.dumps(cv)
+
+        config = MakoTemplate(text=html).render_unicode(**context)
+        return Response(config, content_type='application/javascript', charset='UTF-8')
+    
     @XBlock.handler
     def set_raw_scorm_status(self, request, suffix=''):
         """
